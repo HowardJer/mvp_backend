@@ -31,7 +31,7 @@ def book():
         except Exception as e:
             print(e)
         finally: 
-            print(results)
+            # print(results)
             if(conn != None):
               
                 conn.close() 
@@ -109,16 +109,18 @@ def book():
         conn = None
         cursor = None
         try:
+            
             conn = connect()
             cursor = conn.cursor()
-            cursor.execute("UPDATE library SET book_or_tape =?, author_first_name =?, author_last_name =?, book_title =?, genre =? WHERE id=?",
-                           [book_or_tape, author_first_name, author_last_name, book_title, genre, library_id])
+            cursor.execute("UPDATE library SET member_id =?, book_or_tape =?, author_first_name =?, author_last_name =?, book_title =?, genre =? WHERE id=?",
+                           [member_id, book_or_tape, author_first_name, author_last_name, book_title, genre, library_id])
             rows = cursor.rowcount
             conn.commit()
             rowcount = cursor.rowcount            
         except Exception as e:
             print(e)
         finally: 
+           
             if(conn != None):
                 conn.rollback() 
                 conn.close() 
@@ -137,33 +139,168 @@ def book():
                 return Response(json.dumps(book, default=str),
                                 mimetype="application/json",status=200)  
             else: 
-                return Response("Failed", mimetype="html/text", status=200)   
+                return Response("Failed", mimetype="html/text", status=200)      
     
+    if request.method == "DELETE":
     
-    
-    
-    
-    # if request.method == "DELETE":
-    
-    #     blog_id = request.json.get("id")
-    #     conn = None
-    #     cursor = None
-    #     try:
-    #         conn = connect()
-    #         cursor = conn.cursor()
-    #         cursor.execute("DELETE FROM blog_list WHERE id=?",[blog_id])
-    #         rows = cursor.rowcount
-    #         conn.commit()
-    #         rowcount = cursor.rowcount
-    #     except Exception as e:
-    #         print(e)
-    #     finally: 
-    #         if(conn != None):
-    #             conn.rollback() 
-    #             conn.close() 
-    #         if(cursor != None):
-    #             cursor.close()
-    #         if(rowcount == 1): 
+        library_id = request.json.get("id")
+        conn = None
+        cursor = None
+        try:
+            conn = connect()
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM library WHERE id=?",[library_id])
+            rows = cursor.rowcount
+            conn.commit()
+            rowcount = cursor.rowcount
+        except Exception as e:
+            print(e)
+        finally: 
+            if(conn != None):
+                conn.rollback() 
+                conn.close() 
+            if(cursor != None):
+                cursor.close()
+            if(rowcount == 1): 
 
-    #             return Response("Success",mimetype="html/text",status=200)  
-    #             return Response("Failed", mimetype="html/text", status=200)                        
+                return Response("Success",mimetype="html/text",status=200)  
+                return Response("Failed", mimetype="html/text", status=200) 
+            
+            
+        
+    # START OF MEMBERS                                   
+
+
+
+@app.route("/members",methods=["GET", "POST", "PATCH", "DELETE"])  
+def member():
+    if request.method == "GET":
+        conn = None
+        cursor = None
+        results = None
+        try:
+            conn = connect()
+            cursor = conn.cursor(dictionary=True)
+            cursor.execute("SELECT * FROM members")
+            results = cursor.fetchall()
+        except Exception as e:
+            print(e)
+        finally: 
+            print(results)
+            if(conn != None):
+              
+                conn.close() 
+            if(cursor != None):
+                cursor.close()
+            if(results != None or results == []):
+                library = []
+                return Response(
+                    json.dumps(results, default=str),
+                    mimetype="application/json",
+                    status=200)
+            else: 
+                return Response("Failed", mimetype="html/text", status=400) 
+                    
+    if request.method == "POST":
+        members_id = request.json.get("id")
+        member_name = request.json.get("member_name")
+        password = request.json.get("password")
+                      
+        conn = None
+        cursor = None
+        results = None
+        try:
+            conn = connect()
+            cursor = conn.cursor()
+            cursor.execute("INSERT INTO members (member_name, password) VALUES (?, ?)",
+                           [member_name, password]
+            )
+            conn.commit()
+            members_id = cursor.lastrowid
+        except Exception as e:
+            print(e)
+        finally:
+            print(results)
+            if(conn != None):
+                conn.rollback() 
+                conn.close() 
+            if(cursor != None):
+                cursor.close()
+            if(members_id != None ):
+
+
+                member ={
+                    "id":members_id,
+                    "member_name": member_name,
+                    "password": password    
+                }              
+
+                return Response(
+                    json.dumps(member, default=str),
+                    mimetype="application/json", status=200 
+                )
+            else: 
+                return Response(
+                    "Failed", 
+                    mimetype="html/text", status=200 
+                )   
+                         
+    if request.method == "PATCH":
+        members_id = request.json.get("id")
+        member_name = request.json.get("member_name")
+        password = request.json.get("password")
+                
+        conn = None
+        cursor = None
+        try:
+            
+            conn = connect()
+            cursor = conn.cursor()
+            cursor.execute("UPDATE library SET member_name=?, password=? WHERE id=?",
+                           [member_name, password, members_id])
+            rows = cursor.rowcount
+            conn.commit()
+            rowcount = cursor.rowcount            
+        except Exception as e:
+            print(e)
+        finally: 
+           
+            if(conn != None):
+                conn.rollback() 
+                conn.close() 
+            if(cursor != None):
+                cursor.close()
+            if(rowcount == 1):
+                member ={
+                    "id": members_id,
+                    "member_name": member_name,
+                    "password": password
+                }                   
+                return Response(json.dumps(book, default=str),
+                                mimetype="application/json",status=200)  
+            else: 
+                return Response("Failed", mimetype="html/text", status=200)      
+    
+    if request.method == "DELETE":    
+        members_id = request.json.get("id")
+        conn = None
+        cursor = None
+        try:
+            conn = connect()
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM library WHERE id=?",[members_id])
+            rows = cursor.rowcount
+            conn.commit()
+            rowcount = cursor.rowcount
+        except Exception as e:
+            print(e)
+        finally: 
+            if(conn != None):
+                conn.rollback() 
+                conn.close() 
+            if(cursor != None):
+                cursor.close()
+            if(rowcount == 1): 
+
+                return Response("Success",mimetype="html/text",status=200)  
+                return Response("Failed", mimetype="html/text", status=200)    
